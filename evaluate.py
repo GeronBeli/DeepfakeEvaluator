@@ -21,10 +21,8 @@ def load_model_class(model_file, model_class_name):
     if not os.path.exists(model_path):
         raise ValueError(f"Model file {model_path} does not exist")
     
-    # Add model directory to path to support imports between files
     if model_dir not in sys.path:
         sys.path.insert(0, model_dir)
-        # Add parent directory to support relative imports
         sys.path.insert(0, os.path.dirname(model_dir))
     
     module_name = os.path.splitext(os.path.basename(model_path))[0]
@@ -46,7 +44,7 @@ def evaluate_model(model_file, model_class_name, weights_path, data_dir, output_
     model = ModelClass()
     
     # Load weights
-    model.load_weights(weights_path)
+    model.load_state_dict(weights_path)
     
     # Import dataloader
     # We need to ensure Data directory is in the path
@@ -92,12 +90,15 @@ def evaluate_model(model_file, model_class_name, weights_path, data_dir, output_
     real_total = (df['CorrectLabel'] == 'REAL').sum()
     fake_correct = ((df['CorrectLabel'] == 'FAKE') & (df['PredictedLabel'] == 'FAKE')).sum()
     fake_total = (df['CorrectLabel'] == 'FAKE').sum()
+
+    real_detection_rate = real_correct / real_total if real_total > 0 else 0
+    fake_detection_rate = fake_correct / fake_total if fake_total > 0 else 0
     
     print(f"Evaluation Results:")
     print(f"Total images: {len(df)}")
     print(f"Overall Accuracy: {accuracy:.4f}")
-    print(f"Real Detection Rate: {real_correct/real_total:.4f} ({real_correct}/{real_total})")
-    print(f"Fake Detection Rate: {fake_correct/fake_total:.4f} ({fake_correct}/{fake_total})")
+    print(f"Real Detection Rate: {real_detection_rate:.4f} ({real_detection_rate})")
+    print(f"Fake Detection Rate: {fake_detection_rate:.4f} ({fake_detection_rate})")
     print(f"Results saved to {output_csv}")
 
 
@@ -113,7 +114,7 @@ def main():
                         help='Path to the model weights file')
     parser.add_argument('--data_dir', type=str, default='sample_images',
                         help='Directory containing REAL and FAKE subdirectories')
-    parser.add_argument('--output', type=str, default='evaluation_results.csv',
+    parser.add_argument('--output', type=str, default='.\\evaluation_results.csv',
                         help='Path to save the evaluation results CSV')
     
     args = parser.parse_args()
